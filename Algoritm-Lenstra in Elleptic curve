@@ -1,0 +1,133 @@
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.math.BigInteger;
+
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.math.BigInteger;
+
+public class TonelliShenksGUI extends JFrame {
+
+    private JTextField pField, aField;
+    private JTextArea outputArea;
+    private JButton calculateButton;
+
+    public TonelliShenksGUI() {
+        setTitle("Tonelli-Shanks Square Root Finder");
+        setSize(400, 300);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLayout(new FlowLayout());
+
+        pField = new JTextField(10);
+        aField = new JTextField(10);
+
+        outputArea = new JTextArea(10, 30);
+        outputArea.setWrapStyleWord(true);
+        outputArea.setLineWrap(true);
+        outputArea.setCaretPosition(outputArea.getDocument().getLength());
+        outputArea.setEditable(false);
+
+        JScrollPane scroll = new JScrollPane(outputArea,
+                JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
+
+        calculateButton = new JButton("Calculate Roots");
+        calculateButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                calculateRoots();
+            }
+        });
+
+        add(new JLabel("Enter prime number p:"));
+        add(pField);
+
+        add(new JLabel("Enter integer a:"));
+        add(aField);
+
+        add(calculateButton);
+        add(scroll);
+
+        setVisible(true);
+    }
+
+    private void calculateRoots() {
+        try {
+            BigInteger p = new BigInteger(pField.getText());
+            BigInteger a = new BigInteger(aField.getText());
+
+            if (!a.modPow(p.subtract(BigInteger.ONE).divide(BigInteger.valueOf(2)), p).equals(BigInteger.ONE)) {
+                outputArea.setText("No solution exists for these inputs.");
+                return;
+            }
+
+            BigInteger[] roots = tonelliShanks(p, a);
+            outputArea.setText(""); // Clear the text area first
+
+            if (roots == null) {
+                outputArea.append("No solution could be found.");
+            } else {
+                outputArea.append(" root_1 = " + roots[0] + " and root_2 = " + roots[1]);
+            }
+        } catch (NumberFormatException e) {
+            outputArea.setText("Invalid input!");
+        }
+    }
+
+    private static BigInteger[] tonelliShanks(BigInteger p, BigInteger a) {
+        BigInteger q = p.subtract(BigInteger.ONE);
+        BigInteger ss = BigInteger.ZERO;
+        while (q.mod(BigInteger.valueOf(2)).equals(BigInteger.ZERO)) {
+            ss = ss.add(BigInteger.ONE);
+            q = q.divide(BigInteger.valueOf(2));
+        }
+
+        if (ss.equals(BigInteger.ONE)) {
+            BigInteger r1 = a.modPow(p.add(BigInteger.ONE).divide(BigInteger.valueOf(4)), p);
+            BigInteger r2 = p.subtract(r1);
+            return new BigInteger[]{r1, r2};
+        }
+
+        BigInteger z = BigInteger.valueOf(2);
+        while (!z.modPow(p.subtract(BigInteger.ONE).divide(BigInteger.valueOf(2)), p).equals(p.subtract(BigInteger.ONE))) {
+            z = z.add(BigInteger.ONE);
+        }
+
+        BigInteger c = z.modPow(q, p);
+        BigInteger r = a.modPow(q.add(BigInteger.ONE).divide(BigInteger.valueOf(2)), p);
+        BigInteger t = a.modPow(q, p);
+        BigInteger m = ss;
+        BigInteger b, tmp;
+
+        while (!t.equals(BigInteger.ONE)) {
+            int i = 0;
+            tmp = t;
+            while (!tmp.equals(BigInteger.ONE)) {
+                tmp = tmp.multiply(tmp).mod(p);
+                i++;
+            }
+            
+            BigInteger exponent = BigInteger.valueOf(2).pow(m.intValue() - i - 1);
+            b = c.modPow(exponent, p);
+            r = r.multiply(b).mod(p);
+            c = b.multiply(b).mod(p);
+            t = t.multiply(c).mod(p);
+            m = BigInteger.valueOf(i);
+        }
+
+        BigInteger r2 = p.subtract(r);
+        return new BigInteger[]{r, r2};
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                new TonelliShenksGUI();
+            }
+        });
+    }
+}
